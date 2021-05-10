@@ -48,7 +48,7 @@ Whenever you add a new Koin Module, it will be automatically added to the same l
 
 ### Avoid conflicts in multi-module projects
 To avoid ambiguity and class-loading conflicts in case you want to use KMP in multiple project modules, you can specify a prefix
-to be used in the generated names by passing an argument named `"kmp.module"` to the
+to be used in the generated names by passing an argument named `"kmp.prefix"` to the
 annotation processor in your build.gradle.kts:
 ```kotlin
 kapt {
