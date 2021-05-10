@@ -34,18 +34,15 @@ class KoinModuleProcessor : AbstractProcessor() {
             transform = { element ->
                 processingEnv.elementUtils.getPackageOf(element).toString() + "." +
                         element.simpleName.run {
-                            substring(3 until indexOf('$')).replaceFirstChar { it.lowercase() }
+                            substring(3 until indexOf('$')).decapitalize()
                         }
             }
         )
         try {
-            val modulePrefix = processingEnv.options?.get("kmp.module")
-            val propertyName = if (modulePrefix != null) {
-                "${modulePrefix}KoinModules"
-            } else {
-                "koinModules"
-            }
-            FileSpec.builder("org.koin.generated", "KoinModules")
+            val prefix = processingEnv.options?.get("kmp.prefix") ?: ""
+            val fileName = "${prefix.capitalize()}KoinModules"
+            val propertyName = if (prefix.isBlank()) "koinModules" else "${prefix}KoinModules"
+            FileSpec.builder("org.koin.generated", fileName)
                 .addProperty(
                     PropertySpec.builder(propertyName, LIST.plusParameter(Module::class.asTypeName()))
                         .initializer(statement)
@@ -64,4 +61,10 @@ class KoinModuleProcessor : AbstractProcessor() {
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf(KoinModule::class.java.canonicalName)
     }
+
+    private fun String.capitalize() =
+        replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+    private fun String.decapitalize() =
+        replaceFirstChar { it.lowercase() }
 }

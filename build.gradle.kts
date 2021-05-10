@@ -27,7 +27,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "com.rocca23"
             artifactId = "koin-module-processor"
-            version = "1.0.2"
+            version = "1.0.3"
             from(components["java"])
             pom {
                 name.set("Koin Module Processor")
