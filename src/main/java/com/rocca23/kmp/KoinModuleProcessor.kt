@@ -24,6 +24,9 @@ class KoinModuleProcessor : AbstractProcessor() {
             return true
         }
         val elements = roundEnv.getElementsAnnotatedWith(KoinModule::class.java)
+        if (elements.isEmpty()) {
+            return true
+        }
         val statement = elements.joinToString(
             prefix = "listOf(\n",
             postfix = "\n)",
@@ -36,9 +39,15 @@ class KoinModuleProcessor : AbstractProcessor() {
             }
         )
         try {
+            val modulePrefix = processingEnv.options?.get("kmp.module")
+            val propertyName = if (modulePrefix != null) {
+                "${modulePrefix}KoinModules"
+            } else {
+                "koinModules"
+            }
             FileSpec.builder("org.koin.generated", "KoinModules")
                 .addProperty(
-                    PropertySpec.builder("koinModules", LIST.plusParameter(Module::class.asTypeName()))
+                    PropertySpec.builder(propertyName, LIST.plusParameter(Module::class.asTypeName()))
                         .initializer(statement)
                         .addModifiers(KModifier.INTERNAL)
                         .build()
