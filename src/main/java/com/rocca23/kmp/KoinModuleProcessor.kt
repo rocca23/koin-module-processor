@@ -1,13 +1,9 @@
 package com.rocca23.kmp
 
 import com.google.auto.service.AutoService
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.asTypeName
 import org.koin.core.module.Module
-import java.util.*
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.FilerException
 import javax.annotation.processing.Processor
@@ -32,10 +28,10 @@ class KoinModuleProcessor : AbstractProcessor() {
             prefix = "listOf(\n",
             postfix = "\n)",
             separator = ",\n",
-            transform = {
-                processingEnv.elementUtils.getPackageOf(it).toString() + "." +
-                        it.simpleName.run {
-                            substring(3 until indexOf('$')).decapitalize(Locale.ROOT)
+            transform = { element ->
+                processingEnv.elementUtils.getPackageOf(element).toString() + "." +
+                        element.simpleName.run {
+                            substring(3 until indexOf('$')).replaceFirstChar { it.lowercase() }
                         }
             }
         )
@@ -44,6 +40,7 @@ class KoinModuleProcessor : AbstractProcessor() {
                 .addProperty(
                     PropertySpec.builder("koinModules", LIST.plusParameter(Module::class.asTypeName()))
                         .initializer(statement)
+                        .addModifiers(KModifier.INTERNAL)
                         .build()
                 )
                 .build()
