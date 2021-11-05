@@ -4,8 +4,8 @@ repositories {
 }
 plugins {
     id("java-library")
-    kotlin("jvm") version "1.5.0"
-    kotlin("kapt") version "1.5.0"
+    kotlin("jvm") version "1.5.31"
+    kotlin("kapt") version "1.5.31"
     id("maven-publish")
 }
 
@@ -15,11 +15,11 @@ java {
 }
 
 dependencies {
-    val autoService = "1.0-rc7"
+    val autoService = "1.0.1"
     implementation("com.google.auto.service:auto-service-annotations:$autoService")
     kapt("com.google.auto.service:auto-service:$autoService")
     implementation("com.squareup:kotlinpoet:1.6.0")
-    compileOnly("io.insert-koin:koin-core:3.0.1")
+    compileOnly("io.insert-koin:koin-core:3.1.2")
 }
 
 publishing {
@@ -27,7 +27,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "com.rocca23"
             artifactId = "koin-module-processor"
-            version = "1.0.3"
+            version = "1.0.4"
             from(components["java"])
             pom {
                 name.set("Koin Module Processor")
