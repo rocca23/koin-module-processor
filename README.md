@@ -4,18 +4,18 @@ Annotation Processor to generate a list of Koin Modules.
 ## Usage
 
 ### Setup
-In your build.gradle.kts (or just build.gradle if you're not using Kotlin DSL), add the Kotlin Kapt plugin:
+In your module buildscript, add the KSP plugin:
 ```kotlin
 plugins {
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp") version "1.6.0-1.0.1"
 }
 ```
 
 Then add the following dependencies:
 ```kotlin
-val kmpLatestVersion = "{latest version}"
+val kmpLatestVersion = "2.0.0"
 implementation("com.rocca23:koin-module-processor:$kmpLatestVersion")
-kapt("com.rocca23:koin-module-processor:$kmpLatestVersion")
+ksp("com.rocca23:koin-module-processor:$kmpLatestVersion")
 ```
 
 ### Declaring Koin modules

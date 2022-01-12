@@ -1,25 +1,17 @@
-repositories {
-    google()
-    mavenCentral()
-}
 plugins {
     id("java-library")
-    kotlin("jvm") version "1.5.31"
-    kotlin("kapt") version "1.5.31"
+    kotlin("jvm")
     id("maven-publish")
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+dependencies {
+    implementation("com.google.devtools.ksp:symbol-processing-api:1.6.10-1.0.2")
+    compileOnly("io.insert-koin:koin-core:3.1.2")
 }
 
-dependencies {
-    val autoService = "1.0.1"
-    implementation("com.google.auto.service:auto-service-annotations:$autoService")
-    kapt("com.google.auto.service:auto-service:$autoService")
-    implementation("com.squareup:kotlinpoet:1.6.0")
-    compileOnly("io.insert-koin:koin-core:3.1.2")
+val sourcesJar by tasks.register<Jar>("sourcesJar") {
+    archiveClassifier.set("sources")
+    from(project.sourceSets.main.get().allJava.srcDirs)
 }
 
 publishing {
@@ -27,8 +19,9 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "com.rocca23"
             artifactId = "koin-module-processor"
-            version = "1.0.4"
+            version = "2.0.0"
             from(components["java"])
+            artifact(sourcesJar)
             pom {
                 name.set("Koin Module Processor")
                 description.set("Annotation Processor to generate a list of Koin Modules")

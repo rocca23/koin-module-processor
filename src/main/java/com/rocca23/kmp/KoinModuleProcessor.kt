@@ -1,70 +1,56 @@
 package com.rocca23.kmp
 
-import com.google.auto.service.AutoService
-import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.plusParameter
-import org.koin.core.module.Module
-import javax.annotation.processing.AbstractProcessor
-import javax.annotation.processing.FilerException
-import javax.annotation.processing.Processor
-import javax.annotation.processing.RoundEnvironment
-import javax.annotation.processing.SupportedSourceVersion
-import javax.lang.model.SourceVersion
-import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
+import com.google.devtools.ksp.containingFile
+import com.google.devtools.ksp.processing.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSFile
+import java.util.*
 
-@AutoService(Processor::class)
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
-class KoinModuleProcessor : AbstractProcessor() {
+class KoinModuleProcessor(
+    private val codeGenerator: CodeGenerator,
+    private val logger: KSPLogger,
+    private val options: Map<String, String>
+) : SymbolProcessor {
 
-    private var fileWritten = false
-
-    override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
-        if (roundEnv.processingOver() || roundEnv.errorRaised() || fileWritten) {
-            return true
+    override fun process(resolver: Resolver): List<KSAnnotated> {
+        val symbols = resolver.getSymbolsWithAnnotation(KoinModule::class.qualifiedName!!)
+        if (!symbols.iterator().hasNext()) {
+            logger.info("No annotated symbols found")
+            return emptyList()
         }
-        val elements = roundEnv.getElementsAnnotatedWith(KoinModule::class.java)
-        if (elements.isEmpty()) {
-            return true
-        }
-        val statement = elements.joinToString(
-            prefix = "listOf(\n",
-            postfix = "\n)",
-            separator = ",\n",
-            transform = { element ->
-                processingEnv.elementUtils.getPackageOf(element).toString() + "." +
-                        element.simpleName.run {
-                            substring(3 until indexOf('$')).decapitalize()
-                        }
+        val visitor = KoinModuleProcessorVisitor()
+        val dependencies = mutableSetOf<KSFile>()
+        symbols.iterator().forEachRemaining { annotatedSymbol ->
+            annotatedSymbol.containingFile?.let {
+                dependencies += it
             }
-        )
-        try {
-            val prefix = processingEnv.options?.get("kmp.prefix") ?: ""
-            val fileName = "${prefix.capitalize()}KoinModules"
-            val propertyName = if (prefix.isBlank()) "koinModules" else "${prefix}KoinModules"
-            FileSpec.builder("org.koin.generated", fileName)
-                .addProperty(
-                    PropertySpec.builder(propertyName, LIST.plusParameter(Module::class.asTypeName()))
-                        .initializer(statement)
-                        .addModifiers(KModifier.INTERNAL)
-                        .build()
-                )
-                .build()
-                .writeTo(processingEnv.filer)
-            fileWritten = true
-        } catch (e: FilerException) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, e.localizedMessage)
+            annotatedSymbol.accept(visitor, Unit)
         }
-        return true
+        logger.info("found ${dependencies.size} dependencies")
+        val prefix = options["kmp.prefix"] ?: ""
+        val packageName = "org.koin.generated"
+        val fileName = "${prefix.capitalize()}KoinModules"
+        val propertyName = if (prefix.isBlank()) "koinModules" else "${prefix}KoinModules"
+        val statement = visitor.koinModuleNames.joinToString(
+            prefix = "listOf(\n    ",
+            postfix = "\n)",
+            separator = ",\n    ",
+        )
+        val fileOutputStream = codeGenerator.createNewFile(
+            dependencies = Dependencies(true, *dependencies.toTypedArray()),
+            packageName = packageName,
+            fileName = fileName
+        )
+        logger.info("Created file $packageName.$fileName.kt")
+        fileOutputStream.use {
+            it.write("package $packageName\n\n".toByteArray())
+            it.write("internal val $propertyName = $statement".toByteArray())
+        }
+        logger.info("Processing ended")
+        return emptyList()
     }
 
-    override fun getSupportedAnnotationTypes(): MutableSet<String> {
-        return mutableSetOf(KoinModule::class.java.canonicalName)
+    private fun String.capitalize(): String {
+        return replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     }
-
-    private fun String.capitalize() =
-        replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-
-    private fun String.decapitalize() =
-        replaceFirstChar { it.lowercase() }
 }
