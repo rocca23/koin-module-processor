@@ -13,6 +13,7 @@ val sourcesJar by tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
     from(project.sourceSets.main.get().allJava.srcDirs)
 }
+group = "com.rocca23"
 
 publishing {
     publications {
