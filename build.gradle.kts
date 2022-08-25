@@ -14,13 +14,15 @@ val sourcesJar by tasks.register<Jar>("sourcesJar") {
     from(project.sourceSets.main.get().allJava.srcDirs)
 }
 group = "com.rocca23"
+val v = "2.0.2"
+version = v
 
 publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = "com.rocca23"
             artifactId = "koin-module-processor"
-            version = "2.0.0"
+            version = v
             from(components["java"])
             artifact(sourcesJar)
             pom {
